@@ -48,7 +48,7 @@ jobs:
           echo "CHN ADfilters compilation [规则数:`cat chn.txt | wc -l`]" >> release.md
           
           tar -zcf rules.tar.gz *.txt
-          echo "VER=date +'%y.%-m.%-d-%H'" >> $GITHUB_ENV
+          echo "VER=v`date +'%y.%-m.%-d-%H'`" >> $GITHUB_ENV
           echo "DIR=$PWD" >> $GITHUB_ENV
 
       - name: Upload New Releases
