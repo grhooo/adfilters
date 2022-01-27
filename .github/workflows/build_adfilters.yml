@@ -1,0 +1,75 @@
+name: Build ADfilters
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 22,1-13/3 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo timedatectl set-timezone "Asia/Shanghai"
+          sudo mkdir /rules
+          sudo chown $USER:$GROUPS /rules
+
+      - name: Build
+        working-directory: /rules
+        run: |
+          wget -t3 -O /usr/share/caddy/1u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters-2020.txt
+          wget -t3 -O /usr/share/caddy/2u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters-2021.txt
+          wget -t3 -O /usr/share/caddy/3u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters-2022.txt
+          wget -t3 -O /usr/share/caddy/4u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt
+          wget -t3 -O /usr/share/caddy/5u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt
+          wget -t3 -O /usr/share/caddy/6u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt
+          wget -t3 -O /usr/share/caddy/7u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/resource-abuse.txt
+          wget -t3 -O /usr/share/caddy/8u https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/unbreak.txt
+          sed -i -e '/^\s*$/d' -e '/^! /d' -e '/^!-/d' -e '/^\[/d' *u
+          cat *u > ubo.txt
+          sed -i "1i\! Title: uBlock filters compilation\n! Description: https://github.com/uBlockOrigin/uAssets [规则数:`cat ubo.txt | wc -l`]\n! Version: `date +"%y.%-m.%-d-%H"`" ubo.txt
+          echo -e "CST每日6至21时,每3小时更新一次.\nuBlock filters compilation [规则数:`cat ubo.txt | wc -l`]" > release.md
+          
+          wget -t3 -O /usr/share/caddy/1e https://easylist.to/easylist/easylist.txt
+          wget -t3 -O /usr/share/caddy/2e https://raw.githubusercontent.com/easylist/easylistchina/master/easylistchina.txt
+          wget -t3 -O /usr/share/caddy/3e https://easylist.to/easylist/easyprivacy.txt
+          wget -t3 -O /usr/share/caddy/4e https://raw.githubusercontent.com/cjx82630/cjxlist/master/cjx-annoyance.txt
+          wget -t3 -O /usr/share/caddy/5e https://raw.githubusercontent.com/xinggsf/Adblock-Plus-Rule/master/rule.txt
+          sed -i -e '/^\s*$/d' -e '/^! /d' -e '/^!-/d' -e '/^\[/d' *e
+          cat *e > chn.txt
+          sed -i "1i\! Title: CHN ADfilters compilation\n! Description: Easylist + EasylistChina + EasyPrivacy + CJX'sAnnoyanceList + 乘风规则 [规则数:`cat chn.txt | wc -l`]\n! Version: `date +"%y.%-m.%-d-%H"`" chn.txt
+          echo "CHN ADfilters compilation [规则数:`cat chn.txt | wc -l`]" >> release.md
+          
+          tar -zcf rules.tar.gz *.txt
+          echo "VER=date +'%y.%-m.%-d-%H'" >> $GITHUB_ENV
+          echo "DIR=$PWD" >> $GITHUB_ENV
+
+      - name: Upload New Releases
+        uses: softprops/action-gh-release@v0.1.14
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VER }}
+          body_path: ${{ env.DIR }}/release.md
+          files: ${{ env.DIR }}/rules.tar.gz
+
+      - name: Delete Older Releases
+        uses: dev-drprasad/delete-older-releases@v0.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          keep_latest: 3
+          delete_tags: true
+
+      - name: Delete workflow runs
+        uses: GitRML/delete-workflow-runs@main
+        with:
+          retain_days: 1
+          keep_minimum_runs: 1
