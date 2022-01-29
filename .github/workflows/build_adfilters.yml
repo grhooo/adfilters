@@ -3,7 +3,7 @@ name: Build ADfilters
 on:
   workflow_dispatch:
   schedule:
-    - cron: '45 21,0-12/3 * * *'
+    - cron: '0 */3 * * *'
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
           sed -i -e '/^\s*$/d' -e '/^! /d' -e '/^!-/d' -e '/^\[/d' -e '/^!#include/d' -e '/^!$/d' *u
           cat *u > ubo.txt
           sed -i "1i\! Title: uBlock filters compilation\n! Description: https://github.com/uBlockOrigin/uAssets [规则数:`cat ubo.txt | wc -l`]\n! Version: `date +"%y.%-m.%-d-%H"`" ubo.txt
-          echo -e "CST每日6至21时,每3小时更新一次.\nuBlock filters compilation [规则数:`cat ubo.txt | wc -l`]" > release.md
+          echo -e "每3小时更新一次.\nuBlock filters compilation [规则数:`cat ubo.txt | wc -l`]" > release.md
 
           wget -t3 -O 1e https://easylist.to/easylist/easylist.txt
           wget -t3 -O 2e https://raw.githubusercontent.com/easylist/easylistchina/master/easylistchina.txt
